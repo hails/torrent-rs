@@ -19,6 +19,6 @@ script:
   - cargo fmt --all -- --check &&
    cargo clippy -- -D warnings &&
    cargo test --verbose &&
-   cargo build --verbose
+   cargo check --verbose
 
 cache: cargo
