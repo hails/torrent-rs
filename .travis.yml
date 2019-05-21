@@ -1,0 +1,25 @@
+language: rust
+
+rust:
+  - stable
+
+os:
+  - linux
+  - osx
+  - windows
+
+env:
+ global:
+   - RUST_BACKTRACE=1
+
+before_script:
+  - rustup component add rustfmt
+  - rustup component add clippy
+
+script:
+  - cargo fmt --all -- --check &&
+   cargo clippy -- -D warnings &&
+   cargo test --verbose &&
+   cargo build --verbose
+
+cache: cargo
