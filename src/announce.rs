@@ -114,7 +114,7 @@ pub fn generate_announce(torrent: &Torrent) -> Result<TrackerAnnounce, Error> {
         uploaded: 0,
         downloaded: 0,
         left: 0,
-        port: 0,
+        port: 43254,
         compact: "1".to_string(),
     })
 }
@@ -138,11 +138,11 @@ fn random_numbers() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_bytes::ByteBuf;
 
     #[test]
     fn generate_announce_correctly() {
         use crate::torrent_info::TorrentInfo;
-        use serde_bytes::ByteBuf;
 
         let peer_id_start = "-RS0001-";
 
@@ -181,7 +181,25 @@ mod tests {
         assert_eq!(announce.uploaded, 0);
         assert_eq!(announce.downloaded, 0);
         assert_eq!(announce.left, 0);
-        assert_eq!(announce.port, 0);
+        assert_eq!(announce.port, 43254);
         assert_eq!(announce.compact, "1");
+    }
+
+    #[test]
+    fn parse_peers_correctly() {
+        let peers_bin = [127, 0, 0, 1, 185, 141, 192, 168, 0, 1, 168, 246];
+        let peers = parse_peers(&ByteBuf::from(peers_bin.to_vec()));
+
+        assert_eq!(peers[0], (String::from("127.0.0.1"), 47501 as u16));
+        assert_eq!(peers[1], (String::from("192.168.0.1"), 43254 as u16));
+    }
+
+    #[test]
+
+    fn parse_peers_empty() {
+        let peers_bin = [];
+        let peers = parse_peers(&ByteBuf::from(peers_bin.to_vec()));
+
+        assert_eq!(peers, []);
     }
 }
