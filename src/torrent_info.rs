@@ -8,37 +8,37 @@ use serde_bytes::ByteBuf;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Torrent {
-  pub announce: String,
-  // #[serde(rename = "announce-list")]
-  pub announce_list: Option<Vec<String>>,
-  #[serde(rename = "creation date")]
-  pub creation_date: i32,
-  pub info: TorrentInfo,
+    pub announce: String,
+    // #[serde(rename = "announce-list")]
+    pub announce_list: Option<Vec<String>>,
+    #[serde(rename = "creation date")]
+    pub creation_date: i32,
+    pub info: TorrentInfo,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone)]
 pub struct TorrentInfo {
-  pub name: String,
-  pub pieces: ByteBuf,
-  #[serde(rename = "piece length")]
-  pub piece_length: u32,
-  pub length: Option<u32>,
-  pub md5sum: Option<String>,
-  pub files: Option<Vec<TorrentInfoFile>>,
+    pub name: String,
+    pub pieces: ByteBuf,
+    #[serde(rename = "piece length")]
+    pub piece_length: u32,
+    pub length: Option<u32>,
+    pub md5sum: Option<String>,
+    pub files: Option<Vec<TorrentInfoFile>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone)]
 pub struct TorrentInfoFile {
-  pub length: u32,
-  pub md5sum: Option<String>,
-  pub path: String,
+    pub length: u32,
+    pub md5sum: Option<String>,
+    pub path: String,
 }
 
 pub fn parse(torrent: &mut BufRead) -> Result<Torrent, Error> {
-  let mut contents = Vec::new();
-  torrent.read_to_end(&mut contents)?;
+    let mut contents = Vec::new();
+    torrent.read_to_end(&mut contents)?;
 
-  let parsed = de::from_bytes::<Torrent>(&contents)?;
+    let parsed = de::from_bytes::<Torrent>(&contents)?;
 
-  Ok(parsed)
+    Ok(parsed)
 }
