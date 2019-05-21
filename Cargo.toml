@@ -19,3 +19,8 @@ nom = "5.0.0-beta1"
 scroll = "0.9.2"
 itertools = "0.8"
 percent-encoding = "1.0.1"
+
+[dev-dependencies.cargo-husky]
+version = "1"
+default-features = false # Disable features which are enabled by default
+features = ["precommit-hook", "run-cargo-test", "run-cargo-clippy", "run-cargo-fmt"]
