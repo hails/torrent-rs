@@ -9,7 +9,7 @@ use sha1::Sha1;
 
 use rand::Rng;
 
-use crate::torrent_info::Torrent;
+use crate::torrent::Torrent;
 
 use reqwest;
 
@@ -18,7 +18,7 @@ use percent_encoding::percent_encode_byte;
 use itertools::Itertools;
 
 #[derive(Serialize, Debug, PartialEq)]
-pub struct TrackerAnnounce {
+pub struct Announce {
     #[serde(skip_serializing)]
     pub info_hash: String,
     #[serde(skip_serializing)]
@@ -32,7 +32,7 @@ pub struct TrackerAnnounce {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct TrackerResponse {
+pub struct Response {
     #[serde(rename = "failure reason")]
     failure_reason: Option<String>,
     pub complete: Option<u32>,
@@ -40,20 +40,17 @@ pub struct TrackerResponse {
     pub interval: Option<u32>,
     #[serde(rename = "peers")]
     peers_bin: Option<ByteBuf>,
-    pub peers: Option<Vec<TrackerResponsePeer>>,
+    pub peers: Option<Vec<Peer>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct TrackerResponsePeer {
+pub struct Peer {
     pub ip: String,
     pub port: u16,
 }
 
-pub fn announce(
-    announce_info: TrackerAnnounce,
-    tracker_url: &str,
-) -> Result<TrackerResponse, Error> {
-    let announce_info = TrackerAnnounce {
+pub fn announce(announce_info: Announce, tracker_url: &str) -> Result<Response, Error> {
+    let announce_info = Announce {
         info_hash: announce_info
             .info_hash_bytes
             .iter()
@@ -73,7 +70,7 @@ pub fn announce(
     let mut buf: Vec<u8> = vec![];
     response.copy_to(&mut buf)?;
 
-    let mut tracker_response: TrackerResponse = de::from_bytes(&buf)?;
+    let mut tracker_response: Response = de::from_bytes(&buf)?;
 
     match &tracker_response.failure_reason {
         Some(failure) => panic!("{:?}", failure),
@@ -88,14 +85,14 @@ pub fn announce(
     Ok(tracker_response)
 }
 
-fn parse_peers(peers: &ByteBuf) -> Vec<TrackerResponsePeer> {
+fn parse_peers(peers: &ByteBuf) -> Vec<Peer> {
     let mut parsed_peers = vec![];
 
     for mut chunk in &peers.into_iter().chunks(6) {
         let ip: String = format!("{}", chunk.by_ref().take(4).format("."));
         let port: Vec<_> = chunk.take(2).collect();
 
-        parsed_peers.push(TrackerResponsePeer {
+        parsed_peers.push(Peer {
             ip,
             port: u16::from(*port[0]) << 8 | u16::from(*port[1]),
         })
@@ -104,14 +101,14 @@ fn parse_peers(peers: &ByteBuf) -> Vec<TrackerResponsePeer> {
     parsed_peers
 }
 
-pub fn generate_announce(torrent: &Torrent) -> Result<TrackerAnnounce, Error> {
+pub fn generate_announce(torrent: &Torrent) -> Result<Announce, Error> {
     let torrent_info = serde_bencode::to_bytes(&torrent.info)?;
     let info_hash = Sha1::from(&torrent_info).digest();
 
     let peer_id = format!("-RS0001-{}", random_numbers());
     assert!(peer_id.len() == 20, "peer_id should have 20 bytes");
 
-    Ok(TrackerAnnounce {
+    Ok(Announce {
         info_hash: "".to_owned(),
         info_hash_bytes: info_hash.bytes(),
         peer_id,
@@ -146,7 +143,7 @@ mod tests {
 
     #[test]
     fn generate_announce_correctly() {
-        use crate::torrent_info::TorrentInfo;
+        use crate::torrent::Info;
 
         let peer_id_start = "-RS0001-";
 
@@ -154,7 +151,7 @@ mod tests {
             announce: "http://nyaa.tracker.wf:7777/announce".to_string(),
             announce_list: None,
             creation_date: 1276147560,
-            info: TorrentInfo {
+            info: Info {
                 name: "[CrunchyRip]_heroman_heroman_pv.ass".to_string(),
                 pieces: ByteBuf::from(vec![
                     179, 44, 185, 20, 5, 96, 4, 178, 51, 254, 139, 204, 87, 213, 125, 68, 213, 108,
