@@ -10,7 +10,7 @@ use serde_bytes::ByteBuf;
 pub struct Torrent {
     pub announce: String,
     #[serde(rename = "announce-list")]
-    pub announce_list: Option<Vec<String>>,
+    pub announce_list: Option<Vec<Vec<String>>>,
     #[serde(rename = "creation date")]
     pub creation_date: i32,
     pub info: Info,
