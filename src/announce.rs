@@ -40,13 +40,13 @@ pub struct TrackerResponse {
     pub interval: Option<u32>,
     #[serde(rename = "peers")]
     peers_bin: Option<ByteBuf>,
-    pub peers: Option<Vec<(String, u16)>>,
+    pub peers: Option<Vec<TrackerResponsePeer>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TrackerResponsePeer {
     pub ip: String,
-    // pub port:
+    pub port: u16,
 }
 
 pub fn announce(
@@ -88,15 +88,19 @@ pub fn announce(
     Ok(tracker_response)
 }
 
-fn parse_peers(peers: &ByteBuf) -> Vec<(String, u16)> {
+fn parse_peers(peers: &ByteBuf) -> Vec<TrackerResponsePeer> {
     let mut parsed_peers = vec![];
 
     for mut chunk in &peers.into_iter().chunks(6) {
         let ip: String = format!("{}", chunk.by_ref().take(4).format("."));
         let port: Vec<_> = chunk.take(2).collect();
 
-        parsed_peers.push((ip, (u16::from(*port[0]) << 8 | u16::from(*port[1]))));;
+        parsed_peers.push(TrackerResponsePeer {
+            ip,
+            port: u16::from(*port[0]) << 8 | u16::from(*port[1]),
+        })
     }
+
     parsed_peers
 }
 
@@ -190,8 +194,11 @@ mod tests {
         let peers_bin = [127, 0, 0, 1, 185, 141, 192, 168, 0, 1, 168, 246];
         let peers = parse_peers(&ByteBuf::from(peers_bin.to_vec()));
 
-        assert_eq!(peers[0], (String::from("127.0.0.1"), 47501 as u16));
-        assert_eq!(peers[1], (String::from("192.168.0.1"), 43254 as u16));
+        assert_eq!(peers[0].ip, String::from("127.0.0.1"));
+        assert_eq!(peers[0].port, 47501 as u16);
+
+        assert_eq!(peers[1].ip, String::from("192.168.0.1"));
+        assert_eq!(peers[1].port, 43254 as u16);
     }
 
     #[test]
@@ -200,6 +207,6 @@ mod tests {
         let peers_bin = [];
         let peers = parse_peers(&ByteBuf::from(peers_bin.to_vec()));
 
-        assert_eq!(peers, []);
+        assert!(peers.is_empty());
     }
 }
